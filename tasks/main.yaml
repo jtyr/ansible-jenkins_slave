@@ -1,0 +1,42 @@
+---
+
+- name: Check if the user's pasword or the authorized key is specified
+  fail:
+    msg: User's password or authorized key must be specified.
+  when: >
+    jenkins_slave_user_password | length == 0 and
+    jenkins_slave_user_authorized_key | length == 0
+
+- name: Create Jenkins user group
+  group:
+    name: "{{ jenkins_slave_user_group }}"
+    gid: "{{ jenkins_slave_user_gid }}"
+  tags:
+    - jenkins_slave_user
+
+- name: Create Jenkins user
+  user:
+    name: "{{ jenkins_slave_user_name }}"
+    uid: "{{ jenkins_slave_user_uid }}"
+    group: "{{ jenkins_slave_user_group }}"
+    groups: "{{ jenkins_slave_user_groups }}"
+    password: "{{ jenkins_slave_user_password }}"
+    home: "{{ jenkins_slave_user_home }}"
+  tags:
+    - jenkins_slave_user
+
+- name: Create the authorized_keys record
+  authorized_key:
+    user: "{{ jenkins_slave_user_name }}"
+    key: "{{ jenkins_slave_user_authorized_key }}"
+  when: jenkins_slave_user_authorized_key | length > 0
+  tags:
+    - jenkins_slave_user
+
+- name: Instal packages
+  package:
+    name: "{{ item }}"
+    state: present
+  with_items: jenkins_slave_pkgs
+  tags:
+    - jenkins_slave_pkg
